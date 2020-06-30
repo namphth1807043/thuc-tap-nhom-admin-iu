@@ -1,8 +1,8 @@
 <template>
   <q-page class="q-pa-sm">
     <q-table
-      title="Categories"
-      :data="categories"
+      title="Orders"
+      :data="orders"
       :hide-header="mode === 'grid'"
       :columns="columns"
       row-key="Name"
@@ -13,31 +13,6 @@
       :loading="isLoading"
     >
       <template v-slot:top-right="props">
-        <!--        <q-item>-->
-        <!--          <date-range-picker-->
-        <!--            ref="picker"-->
-        <!--            :showWeekNumbers="true"-->
-        <!--            :showDropdowns="true"-->
-        <!--            :autoApply="false"-->
-        <!--            v-model="dateRange"-->
-        <!--          >-->
-        <!--            <template v-slot:input="picker" style="min-width: 350px;">-->
-        <!--              {{ picker.startDate }} - {{ picker.endDate }}-->
-        <!--            </template>-->
-        <!--          </date-range-picker>-->
-        <!--        </q-item>-->
-
-        <q-btn @click="new_customer=true"
-               color="primary"
-               outline
-               label="Add New"
-               class="q-mr-md"/>
-
-        <q-input outlined
-                 dense
-                 v-model="filter.name"
-                 label="Name">
-        </q-input>
 
         <div class="q-pl-md q-pr-sm" style="width: 200px">
           <div class="q-gutter-md">
@@ -86,7 +61,12 @@
       </template>
       <template v-slot:body-cell-name="props">
         <q-td :props="props" class="text-capitalize">
-          {{ props.row.Name }}
+          {{ props.row.CustomerName }}
+        </q-td>
+      </template>
+      <template v-slot:body-cell-total_price="props">
+        <q-td :props="props">
+          {{ props.row.TotalPrice | formatInteger }}
         </q-td>
       </template>
       <template v-slot:body-cell-created_at="props">
@@ -105,58 +85,24 @@
       <template v-slot:body-cell-status="props">
         <q-td :props="props">
           <q-chip
-            :color="(props.row.Status === 1)?'green':'red'"
+            :color="(props.row.Status === 2)?'green':(props.row.Status === 1?'orange':'red')"
             text-color="white"
             dense
             class="text-weight-bolder"
             square
-          >{{props.row.Status | filterStatus}}
+          >{{props.row.Status | filterOrderStatus}}
           </q-chip>
         </q-td>
       </template>
       <template v-slot:body-cell-action="props">
         <q-td :props="props">
           <div class="q-gutter-sm">
-            <q-btn dense color="primary" icon="edit" @click="editCategory(props.row)"/>
-            <q-btn dense color="red" icon="delete"/>
+            <q-btn dense color="green" icon="check" @click="done(props.row)"/>
+            <q-btn dense color="red" icon="clear" @click="cancel(props.row)"/>
           </div>
         </q-td>
       </template>
     </q-table>
-    <q-dialog v-model="new_customer">
-      <q-card style="width: 600px; max-width: 60vw;">
-        <q-card-section>
-          <div class="text-h6" v-if="isEdit === false">
-            Add new category
-            <q-btn round flat dense icon="close" class="float-right" color="grey-8" v-close-popup></q-btn>
-          </div>
-          <div class="text-h6" v-else>
-            Edit category
-            <q-btn round flat dense icon="close" class="float-right" color="grey-8" v-close-popup></q-btn>
-          </div>
-        </q-card-section>
-        <q-separator inset></q-separator>
-        <q-card-section class="q-pt-none">
-          <q-form class="q-gutter-md">
-            <q-list>
-              <q-item>
-                <q-item-section>
-                  <q-item-label class="q-pb-xs">Category Name</q-item-label>
-                  <q-input dense outlined v-model="my_category.name" label="Category Name" />
-                </q-item-section>
-              </q-item>
-            </q-list>
-          </q-form>
-        </q-card-section>
-
-        <q-card-actions align="right" class="bg-white text-teal">
-          <q-btn label="Save"
-                 type="submit"
-                 color="primary"
-                 @click="doSaveCategory()"/>
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
   </q-page>
 </template>
 
@@ -168,6 +114,8 @@
   import DateRangePicker from 'vue2-daterange-picker'
   import 'vue2-daterange-picker/dist/vue2-daterange-picker.css'
   import {saveCategory} from "src/store/category/actions";
+  import {httpClient} from "src/api/http";
+  import axios from 'axios'
 
   function wrapCsvValue(val, formatFn) {
     let formatted = formatFn !== void 0 ? formatFn(val) : val;
@@ -185,14 +133,14 @@
       return {
         dateRange: {},
         new_customer: false,
-        my_category: {},
+        my_order: {},
         mode: "list",
         pagination: {
           page: 1,
           rowsPerPage: 10,
           rowsNumber: 0
         },
-        isEdit:false,
+        isEdit: false,
         columns: [
           {
             name: "index",
@@ -203,8 +151,20 @@
           {
             name: "name",
             align: "left",
-            label: "Name",
-            field: "Name"
+            label: "Customer Name",
+            field: "CustomerName"
+          },
+          {
+            name: "phone",
+            align: "left",
+            label: "Customer Phone",
+            field: "CustomerPhone"
+          },
+          {
+            name: "total_price",
+            align: "left",
+            label: "Total Price (VND)",
+            field: "TotalPrice"
           },
           {
             name: "created_at",
@@ -238,18 +198,18 @@
     },
     watch: {
       isSaving: function (val) {
-          if (val === false){
-            this.new_customer = false
-            this.onRequest({
-              pagination: this.pagination
-            })
-          }
+        if (val === false) {
+          this.new_customer = false
+          this.onRequest({
+            pagination: this.pagination
+          })
+        }
       }
     },
     computed: {
-      ...mapState('category', ['categories', 'paging', 'isLoading', 'filter', 'category', 'isSaving']),
+      ...mapState('order', ['orders', 'paging', 'isLoading', 'filter', 'order', 'isSaving']),
       statuses: function () {
-        return Constants.Status
+        return Constants.OrderStatus
       },
 
     },
@@ -260,17 +220,17 @@
     },
     methods: {
       ...mapActions({
-        loadCategories: 'category/loadCategories',
-        saveCategory: 'category/saveCategory',
+        loadOrders: 'order/loadOrders',
+        saveOrder: 'order/saveOrder',
       }),
       index: function (id) {
-        return this.categories.findIndex(x => x.Id === id) + 1;
+        return this.orders.findIndex(x => x.Id === id) + 1;
       },
       exportTable() {
         // naive encoding to csv format
         const content = [this.columns.map(col => wrapCsvValue(col.label))]
           .concat(
-            this.categories.map(row =>
+            this.orders.map(row =>
               this.columns
                 .map(col =>
                   wrapCsvValue(
@@ -298,20 +258,29 @@
       onRequest(props) {
         const {page, rowsPerPage} = props.pagination
         this.pagination = this.paging
-        this.loadCategories({
+        this.loadOrders({
           filter: this.filter,
           page: page,
           size: rowsPerPage
         })
       },
-      doSaveCategory() {
-        this.saveCategory({category : this.my_category})
+      done(order) {
+        httpClient.put(`/orders/${order.Id}`, {
+          ...order,
+          status: 2
+        })
+        this.onRequest({
+          pagination: this.pagination
+        })
       },
-      editCategory(category){
-        this.my_category = category;
-        this.isEdit = true
-        this.new_customer = true
-        // this.saveCategory({category : this.my_category})
+      cancel(order) {
+        httpClient.put(`/orders/${order.Id}`, {
+          ...order,
+          status: 0
+        })
+        this.onRequest({
+          pagination: this.pagination
+        })
       }
     }
   };

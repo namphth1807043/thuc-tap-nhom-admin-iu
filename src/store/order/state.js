@@ -1,5 +1,5 @@
 export default {
-  stations: [],
+  orders: [],
   paging: {
     page: 1,
     rowsPerPage: 10,
@@ -7,16 +7,16 @@ export default {
   },
   search: {},
   filter: {},
-  station: null,
+  order: {},
   isSaved: false,
   error: null,
   isLoading: false,
   isSaving: false,
-  stationDetail: {
-    station: null,
+  orderDetail: {
+    order: null,
     isLoading: false,
     error: null
   },
-  editingStation: null
+  editingOrder: null
 
 }
