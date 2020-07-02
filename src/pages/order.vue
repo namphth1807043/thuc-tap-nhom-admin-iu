@@ -96,10 +96,10 @@
       </template>
       <template v-slot:body-cell-action="props">
         <q-td :props="props">
-          <div class="q-gutter-sm" v-if="props.row.Status === 1">
+          <div class="q-gutter-sm">
             <q-btn dense color="primary" icon="find_in_page" @click="viewOderDetail(props.row)"/>
-            <q-btn dense color="green" icon="check" @click="done(props.row)"/>
-            <q-btn dense color="red" icon="clear" @click="cancel(props.row)"/>
+            <q-btn dense color="green" icon="check" @click="done(props.row)" v-if="props.row.Status === 1"/>
+            <q-btn dense color="red" icon="clear" @click="cancel(props.row)" v-if="props.row.Status === 1"/>
           </div>
         </q-td>
       </template>
