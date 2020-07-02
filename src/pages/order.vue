@@ -96,13 +96,17 @@
       </template>
       <template v-slot:body-cell-action="props">
         <q-td :props="props">
-          <div class="q-gutter-sm">
+          <div class="q-gutter-sm" v-if="props.row.Status === 1">
+            <q-btn dense color="primary" icon="find_in_page" @click="viewOderDetail(props.row)"/>
             <q-btn dense color="green" icon="check" @click="done(props.row)"/>
             <q-btn dense color="red" icon="clear" @click="cancel(props.row)"/>
           </div>
         </q-td>
       </template>
     </q-table>
+    <q-dialog full-width v-model="isLoadOrderDetail">
+     <order-detail :orderId="orderId"></order-detail>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -112,10 +116,12 @@
   import '../utils/filter'
   import {Constants} from '../utils/const'
   import DateRangePicker from 'vue2-daterange-picker'
+  import OrderDetail from '../pages/order-detail'
   import 'vue2-daterange-picker/dist/vue2-daterange-picker.css'
   import {saveCategory} from "src/store/category/actions";
   import {httpClient} from "src/api/http";
   import axios from 'axios'
+  import {loadOrderDetail} from "src/store/order/actions";
 
   function wrapCsvValue(val, formatFn) {
     let formatted = formatFn !== void 0 ? formatFn(val) : val;
@@ -131,6 +137,8 @@
   export default {
     data() {
       return {
+        orderId: null,
+        isLoadOrderDetail: false,
         dateRange: {},
         new_customer: false,
         my_order: {},
@@ -194,7 +202,8 @@
       };
     },
     components: {
-      DateRangePicker
+      DateRangePicker,
+      OrderDetail
     },
     watch: {
       isSaving: function (val) {
@@ -221,7 +230,7 @@
     methods: {
       ...mapActions({
         loadOrders: 'order/loadOrders',
-        saveOrder: 'order/saveOrder',
+        saveOrder: 'order/saveOrder'
       }),
       index: function (id) {
         return this.orders.findIndex(x => x.Id === id) + 1;
@@ -281,6 +290,10 @@
         this.onRequest({
           pagination: this.pagination
         })
+      },
+      viewOderDetail(order) {
+        this.orderId = order.Id
+        this.isLoadOrderDetail = true
       }
     }
   };

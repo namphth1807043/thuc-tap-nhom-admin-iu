@@ -12,11 +12,6 @@ export default {
   error: null,
   isLoading: false,
   isSaving: false,
-  orderDetail: {
-    order: null,
-    isLoading: false,
-    error: null
-  },
+  orderDetail: [],
   editingOrder: null
-
 }

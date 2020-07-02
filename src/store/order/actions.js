@@ -27,6 +27,28 @@ export async function loadOrders({ commit, dispatch }, { filter, page, size }) {
   }
 }
 
+export async function loadOrderDetail({ commit, dispatch }, { orderId }) {
+  commit('fetchOrderBegin');
+
+  try {
+
+    const response = await httpClient.get(`/orders/${orderId}`)
+    console.log(response)
+    commit('fetchOrderSuccess', {
+      orderDetail: response
+    })
+
+    if(response && response.length > 0) {
+      return response
+    } else {
+      return null
+    }
+  } catch (error) {
+    commit('fetchOrderError', error)
+    return null
+  }
+}
+
 export async function saveOrder({ commit }, { order }) {
   commit('saveOrderBegin')
 

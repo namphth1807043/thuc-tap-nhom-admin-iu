@@ -14,6 +14,24 @@ export function fetchOrdersSuccess(state, {orders, paging}) {
   state.isLoading = false
 }
 
+export function fetchOrderError(state, error) {
+  state.error = error
+  state.isLoading = false
+}
+
+export function fetchOrderBegin(state) {
+  state.orderDetail = []
+  state.error = null
+  state.isLoading = true
+
+}
+
+export function fetchOrderSuccess(state, {orderDetail}) {
+  state.orderDetail = orderDetail
+  state.error = null
+  state.isLoading = false
+}
+
 export function fetchOrdersError(state, error) {
   state.error = error
   state.isLoading = false
